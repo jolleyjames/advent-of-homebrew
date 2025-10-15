@@ -1,0 +1,63 @@
+#include <sstream>
+#include <fstream>
+#include <iomanip>
+#include <filesystem>
+
+#include "solution.hpp"
+
+advhb::Solution::Solution(int year, int day, PuzzlePart part, std::function<std::vector<std::string>(std::ifstream&)> invokeFunction) : 
+  year(year), day(day), part(part), invokeFunction(invokeFunction) {
+    solutions.push_back(this);
+}
+
+advhb::Solution::~Solution() {
+    auto itr = solutions.begin();
+    while (itr != solutions.end()) {
+        if (*itr == this)
+            solutions.erase(itr);
+        else 
+            itr++;
+    }
+}
+
+int advhb::Solution::getYear() const {
+    return year;
+}
+
+int advhb::Solution::getDay() const {
+    return day;
+}
+
+advhb::PuzzlePart advhb::Solution::getPart() const {
+    return part;
+}
+
+std::vector<std::string> advhb::Solution::invoke(bool test) const {
+    std::filesystem::path textInputPath = APP_SD_PATH;
+    // Input file name assumed to be "YYYY-DD.txt"
+    // Regular inputs in directory "input"; test inputs in directory "input-test".
+    textInputPath /= (test? "input-test" : "input");
+    std::stringstream filenameStream;
+    filenameStream << std::setfill('0') << std::setw(4) << getYear() << "-" << std::setw(2) << getDay() << ".txt";
+    textInputPath /= filenameStream.str();
+    std::ifstream infile;
+    infile.open(textInputPath);
+    if (!infile.is_open()) {
+        std::stringstream errorMsgStream;
+        errorMsgStream << "ERROR: could not open " << textInputPath;
+        return {errorMsgStream.str()};
+    }
+
+    auto result = invokeFunction(infile);
+    if (infile.is_open())
+        infile.close();
+    return result;
+}
+
+const std::vector<advhb::Solution*> advhb::Solution::getSolutions() {
+    return solutions;
+}
+
+std::vector<advhb::Solution*> advhb::Solution::solutions = std::vector<advhb::Solution*>();
+
+const std::filesystem::path advhb::Solution::APP_SD_PATH = std::filesystem::path("/apps/advhb");
