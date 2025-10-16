@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<app version="1">
+  <name>Advent of Homebrew</name>
+  <coder>jolleyjames</coder>
+  <version>0.0</version>
+  <release_date>20251016</release_date>
+  <short_description>Advent of Code solutions</short_description> 
+  <long_description>
+Advent of Code solutions, as Nintendo Wii homebrew.
+https://github.com/jolleyjames/advent-of-homebrew
+
+Advent of Code is created by Eric Wastl.
+https://adventofcode.com/
+https://was.tl/
+"Advent of Code" is a registered trademark in the United States. jolleyjames is not associated with Advent of Code (apart from being a huge fan).
+  </long_description> 
+  <ahb_access />
+</app>
