@@ -42,6 +42,13 @@ std::vector<std::string> advhb::Solution::invoke(bool test) const {
     textInputPath /= filenameStream.str();
     std::ifstream infile;
     infile.open(textInputPath);
+    if (!infile.is_open() && test) {
+        // If test file is missing, look for "YYYY-DD.txt.1" or "YYYY-DD.txt.2"
+        std::filesystem::path fallbackPath = textInputPath;
+        fallbackPath += ".";
+        fallbackPath += (part == advhb::PuzzlePart::PartOne)? "1" : "2";
+        infile.open(fallbackPath);
+    }
     if (!infile.is_open()) {
         std::stringstream errorMsgStream;
         errorMsgStream << "ERROR: could not open " << textInputPath;
