@@ -20,21 +20,15 @@ advhb::Menu& advhb::Menu::getInstance() {
     return instance;
 }
 
-void advhb::Menu::setSolutions(const std::vector<Solution*>& solutions) {
-    solutionsMap.clear();
-    for (Solution* soln : solutions) {
-        auto yritr = solutionsMap.find(soln->getYear());
-        if (yritr == solutionsMap.end()) {
-            std::map<int, std::map<advhb::PuzzlePart, Solution*> > dayMap = { {soln->getDay(), {{soln->getPart(), soln}} } };
-            solutionsMap[soln->getYear()] = dayMap;
-        } else {
-            auto dayitr = yritr->second.find(soln->getDay());
-            if (dayitr == yritr->second.end()) {
-                std::map<advhb::PuzzlePart, Solution*> partMap = {{soln->getPart(), soln}};
-                yritr->second[soln->getDay()] = partMap;
-            } else {
-                dayitr->second[soln->getPart()] = soln;
-            }
+void advhb::Menu::setSolutions(const std::map<Solution::Key, Solution*>& solutions) {
+    solutionsMap = solutions;
+    yearDayOpts.clear();
+    for (auto soln : solutionsMap) {
+        auto yritr = yearDayOpts.find(soln.second->getYear());
+        if (yritr == yearDayOpts.end())
+            yearDayOpts[soln.second->getYear()] = {soln.second->getDay()};
+        else {
+            yritr->second.insert(soln.second->getDay());
         }
     }
     state = MenuState::YearEntry;
@@ -81,9 +75,9 @@ void advhb::Menu::next() {
 }
 
 int advhb::Menu::selectYear() {
-    std::map<int, std::map<int, std::map<PuzzlePart, Solution*> > >::const_iterator selection = solutionsMap.find(selectedYear);
-    if (selection == solutionsMap.cend())
-        selection = solutionsMap.cbegin();
+    std::map<int, std::set<int> >::const_iterator selection = yearDayOpts.find(selectedYear);
+    if (selection == yearDayOpts.cend())
+        selection = yearDayOpts.cbegin();
     // clear screen, move cursor to top, prompt for year
     std::cout << "\033[2J";
     std::cout << "\x1b[2;0H";
@@ -99,15 +93,15 @@ int advhb::Menu::selectYear() {
 
         // dpad-up ==> previous; dpad-down ==> next; A ==> choose
         if (continueButtonScan && (pressed & WPAD_BUTTON_UP)) {
-            if (selection == solutionsMap.cbegin())
-                selection = solutionsMap.cend();
+            if (selection == yearDayOpts.cbegin())
+                selection = yearDayOpts.cend();
             selection--;
             std::cout << "\rSelect year: " << selection->first << std::flush;
         }
         else if (continueButtonScan && (pressed & WPAD_BUTTON_DOWN)) {
             selection++;
-            if (selection == solutionsMap.cend())
-                selection = solutionsMap.cbegin();
+            if (selection == yearDayOpts.cend())
+                selection = yearDayOpts.cbegin();
             std::cout << "\rSelect year: " << selection->first << std::flush;
         }
         else if (continueButtonScan && (pressed & WPAD_BUTTON_A)) {
@@ -122,15 +116,16 @@ int advhb::Menu::selectYear() {
 }
 
 int advhb::Menu::selectDay() {
-    std::map<int, std::map<PuzzlePart, Solution*> >::const_iterator selection = solutionsMap[selectedYear].find(selectedDay);
-    if (selection == solutionsMap[selectedYear].cend())
-        selection = solutionsMap[selectedYear].cbegin();
+    //std::map<int, std::map<PuzzlePart, Solution*> >::const_iterator selection = solutionsMap[selectedYear].find(selectedDay);
+    std::set<int>::const_iterator selection = yearDayOpts[selectedYear].find(selectedDay);
+    if (selection == yearDayOpts[selectedYear].cend())
+        selection = yearDayOpts[selectedYear].cbegin();
     // clear screen, move cursor to top, show previously selected year, prompt for day
     std::cout << "\033[2J";
     std::cout << "\x1b[2;0H";
     std::cout << "up/down: cycle options | A: select | B: back" << std::endl;
     std::cout << "Select year: " << selectedYear << std::endl;
-    std::cout << "Select day: " << selection->first << std::flush;
+    std::cout << "Select day: " << *selection << std::flush;
     while (continueButtonScan) {
         // Call WPAD_ScanPads each loop, this reads the latest controller states
         WPAD_ScanPads();
@@ -141,16 +136,16 @@ int advhb::Menu::selectDay() {
 
         // dpad-up ==> previous; dpad-down ==> next; B ==> back to year; A ==> choose
         if (continueButtonScan && (pressed & WPAD_BUTTON_UP)) {
-            if (selection == solutionsMap[selectedYear].cbegin())
-                selection = solutionsMap[selectedYear].cend();
+            if (selection == yearDayOpts[selectedYear].cbegin())
+                selection = yearDayOpts[selectedYear].cend();
             selection--;
-            std::cout << "\rSelect day: " << selection->first << std::flush;
+            std::cout << "\rSelect day: " << *selection << std::flush;
         }
         else if (continueButtonScan && (pressed & WPAD_BUTTON_DOWN)) {
             selection++;
-            if (selection == solutionsMap[selectedYear].cend())
-                selection = solutionsMap[selectedYear].cbegin();
-            std::cout << "\rSelect day: " << selection->first << std::flush;
+            if (selection == yearDayOpts[selectedYear].cend())
+                selection = yearDayOpts[selectedYear].cbegin();
+            std::cout << "\rSelect day: " << *selection << std::flush;
         }
         else if (continueButtonScan && (pressed & WPAD_BUTTON_B)) {
             state = MenuState::YearEntry;
@@ -159,7 +154,7 @@ int advhb::Menu::selectDay() {
         else if (continueButtonScan && (pressed & WPAD_BUTTON_A)) {
             std::cout << std::endl;
             state = MenuState::PartEntry;
-            return selection->first;
+            return *selection;
         }
 
         VIDEO_WaitVSync();
@@ -241,8 +236,8 @@ bool advhb::Menu::chooseTestInput() {
 }
 
 void advhb::Menu::runSolution() {
-    auto solnitr = solutionsMap[selectedYear][selectedDay].find(selectedPart);
-    if (solnitr == solutionsMap[selectedYear][selectedDay].end()) {
+    auto solnitr = solutionsMap.find({selectedYear, selectedDay, selectedPart});
+    if (solnitr == solutionsMap.end()) {
         std::cout << "ERROR: Part " << (selectedPart == advhb::PuzzlePart::PartOne? "1" : "2") << " solution not found" << std::endl;
     } else {
         auto result = solnitr->second->invoke(useTestInput);
@@ -278,9 +273,9 @@ void advhb::Menu::postSolution() {
 
 void advhb::Menu::exitApp() {
     // unregister callbacks
-    SYS_SetResetCallback(nullptr);
-    SYS_SetPowerCallback(nullptr);
-    WPAD_SetPowerButtonCallback(nullptr);
+    SYS_SetResetCallback([](u32 _1, void* _2){});
+    SYS_SetPowerCallback([](){});
+    WPAD_SetPowerButtonCallback([](s32 _){});
 
     const char* message;
     s32 resetType;

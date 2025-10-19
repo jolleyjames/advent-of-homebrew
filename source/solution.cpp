@@ -7,17 +7,12 @@
 
 advhb::Solution::Solution(int year, int day, PuzzlePart part, std::function<std::vector<std::string>(std::ifstream&)> invokeFunction) : 
   year(year), day(day), part(part), invokeFunction(invokeFunction) {
-    solutions.push_back(this);
+    solutionsMap[{year, day, part}] = this;
 }
 
 advhb::Solution::~Solution() {
-    auto itr = solutions.begin();
-    while (itr != solutions.end()) {
-        if (*itr == this)
-            solutions.erase(itr);
-        else 
-            itr++;
-    }
+    advhb::Solution::Key key = {this->year, this->day, this->part};
+    solutionsMap.erase(key);
 }
 
 int advhb::Solution::getYear() const {
@@ -61,10 +56,10 @@ std::vector<std::string> advhb::Solution::invoke(bool test) const {
     return result;
 }
 
-const std::vector<advhb::Solution*> advhb::Solution::getSolutions() {
-    return solutions;
+const std::map<advhb::Solution::Key, advhb::Solution*>& advhb::Solution::getSolutions() {
+    return solutionsMap;
 }
 
-std::vector<advhb::Solution*> advhb::Solution::solutions = std::vector<advhb::Solution*>();
+std::map<advhb::Solution::Key, advhb::Solution*> advhb::Solution::solutionsMap;
 
 const std::filesystem::path advhb::Solution::APP_SD_PATH = std::filesystem::path("/apps/advhb");

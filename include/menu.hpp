@@ -2,7 +2,7 @@
 #define MENU_HPP
 
 #include <iostream>
-#include <vector>
+#include <set>
 #include <map>
 #include <string>
 
@@ -23,7 +23,8 @@ namespace advhb {
         Menu& operator=(Menu&&) = delete;
 
         MenuState state = MenuState::Uninitialized;
-        std::map<int, std::map<int, std::map<PuzzlePart, Solution*> > > solutionsMap;
+        std::map<Solution::Key, Solution*> solutionsMap;
+        std::map<int, std::set<int> > yearDayOpts;
         std::string errorMessage;
         int selectedYear;
         int selectedDay;
@@ -43,7 +44,7 @@ namespace advhb {
         void error();
     public:
         static Menu& getInstance();
-        void setSolutions(const std::vector<Solution*>&);
+        void setSolutions(const std::map<Solution::Key, Solution*>&);
         void setErrorMessage(const std::string&);
         void next();
         void power();
