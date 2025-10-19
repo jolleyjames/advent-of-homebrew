@@ -46,6 +46,10 @@ solution finishes. The application also responds to the Power and Reset buttons 
 
 ## Version History
 
+* 2025.292 - October 19, 2025
+    * Started year 2023 solutions
+    * Support different inputs for testing parts 1 and 2 of daily puzzle
+    * Stability improvements
 * 0.0 - October 16, 2025
     * Initial Release
 
