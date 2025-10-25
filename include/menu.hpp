@@ -49,6 +49,7 @@ namespace advhb {
         void next();
         void power();
         void reset();
+        MenuState getState() const {return state;}
     };
 }
 

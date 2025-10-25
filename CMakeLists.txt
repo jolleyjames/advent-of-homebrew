@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(advhb LANGUAGES CXX VERSION 1.0.0)
+project(advhb LANGUAGES CXX VERSION 2025.292)
 
 find_library(FAT32_LIBRARY NAMES fat HINTS "${DEVKITPRO}/libogc/lib/wii")
+find_library(MAD_LIBRARY NAMES mad HINTS "${DEVKITPRO}/libogc/lib/wii")
+find_library(ASND_LIBRARY NAMES asnd HINTS "${DEVKITPRO}/libogc/lib/wii")
 
 find_package(Eigen3 REQUIRED NO_MODULE HINTS "/usr/local/share/eigen3/cmake")
 
@@ -18,17 +20,24 @@ target_sources(Menu PRIVATE source/menu.cpp)
 target_compile_options(Menu PRIVATE -Wall)
 target_include_directories(Menu PRIVATE include)
 
+add_library(Audio OBJECT)
+target_sources(Audio PRIVATE source/audio.cpp)
+target_compile_options(Audio PRIVATE -Wall)
+target_include_directories(Audio PRIVATE include)
+
 add_executable(boot)
 target_sources(boot PRIVATE source/main.cpp)
 target_compile_options(boot PRIVATE -Wall)
 target_include_directories(boot PRIVATE include)
-target_link_libraries(boot PRIVATE Menu Solutions ${FAT32_LIBRARY})
+target_link_libraries(boot PRIVATE Menu Solutions Audio ${FAT32_LIBRARY} ${MAD_LIBRARY} ${ASND_LIBRARY})
 
 ogc_create_dol(boot)
 
 add_custom_target(zip
   COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_NAME}/input"
   COMMAND ${CMAKE_COMMAND} -E copy boot.dol "${PROJECT_SOURCE_DIR}/meta.xml" "${PROJECT_SOURCE_DIR}/icon.png" ${PROJECT_NAME}
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_NAME}/media"
+  COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/media/wooden_shjips_o_tannenbaum.mp3" "${PROJECT_NAME}/media/bgm.mp3"
   COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/input-test" "${PROJECT_NAME}/input-test"
   COMMAND ${CMAKE_COMMAND} -E tar cf "${PROJECT_NAME}.zip" --format=zip ${PROJECT_NAME}
   COMMAND ${CMAKE_COMMAND} -E rm -rf ${PROJECT_NAME}

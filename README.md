@@ -40,12 +40,16 @@ are explained in the menu but are pretty basic: up/down on the D-pad to cycle th
 days, 1 or 2 selects part 1 or part 2, A forward, B back, HOME returns to the system menu after a
 solution finishes. The application also responds to the Power and Reset buttons on the console.
 
+Hold B at startup to mute background music.
+
 ## Author
 
 [James Jolley](https://jolley.co/): [\[Bluesky\]](https://bsky.app/profile/jolley.co), <jim.jolley@gmail.com>
 
 ## Version History
 
+* 2025.??? - ??? ??, 2025
+    * Added background music
 * 2025.292 - October 19, 2025
     * Started year 2023 solutions
     * Support different inputs for testing parts 1 and 2 of daily puzzle
@@ -57,9 +61,17 @@ solution finishes. The application also responds to the Power and Reset buttons 
 
 This project is licensed under the MIT License - see the LICENSE.txt file for details
 
+["O Tannenbaum"](https://freemusicarchive.org/music/Wooden_Shjips/Holiday_Cassingle/Wooden_Shjips_-_O_Tannenbaum/) by 
+[Wooden Shjips](https://freemusicarchive.org/music/Wooden_Shjips/contact) is licensed under a
+[Attribution-NonCommercial-ShareAlike 3.0 International License](https://creativecommons.org/licenses/by-nc-sa/3.0/).\
+![Button for Creative Commons Attribution-NonCommercial-ShareAlike 3.0 International License](media/cclicense.png)
+
 ## Acknowledgments
 
 * [Eric Wastl](https://was.tl/), creator of [Advent of Code](https://adventofcode.com/)
 * [TheN00b21](https://www.youtube.com/@BackSoon...) for their very informative homebrew
 development tutorials -- [part 1](https://youtu.be/noxGGdxHbDY?si=8WqETqBtIh5mwfLW), 
 [part 2](https://youtu.be/B2FMitU0AOI?si=rF7TCyn2bXLos1TN)
+* [Wooden Shjips](https://freemusicarchive.org/music/Wooden_Shjips/contact) for the
+festive interpretation of 
+["O Tannenbaum"](https://freemusicarchive.org/music/Wooden_Shjips/Holiday_Cassingle/Wooden_Shjips_-_O_Tannenbaum/)

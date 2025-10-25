@@ -9,6 +9,7 @@
 #include <wiiuse/wpad.h>
 
 #include "menu.hpp"
+#include "audio.hpp"
 #include "solution.hpp"
 
 advhb::Menu::Menu() {
@@ -116,7 +117,6 @@ int advhb::Menu::selectYear() {
 }
 
 int advhb::Menu::selectDay() {
-    //std::map<int, std::map<PuzzlePart, Solution*> >::const_iterator selection = solutionsMap[selectedYear].find(selectedDay);
     std::set<int>::const_iterator selection = yearDayOpts[selectedYear].find(selectedDay);
     if (selection == yearDayOpts[selectedYear].cend())
         selection = yearDayOpts[selectedYear].cbegin();
@@ -276,6 +276,10 @@ void advhb::Menu::exitApp() {
     SYS_SetResetCallback([](u32 _1, void* _2){});
     SYS_SetPowerCallback([](){});
     WPAD_SetPowerButtonCallback([](s32 _){});
+
+    // bgm fade out
+    //TODO just check that the new audio system plays music and stops, change to fade later
+    advhb::Audio::getInstance().stopBgmMP3();
 
     const char* message;
     s32 resetType;
