@@ -278,8 +278,7 @@ void advhb::Menu::exitApp() {
     WPAD_SetPowerButtonCallback([](s32 _){});
 
     // bgm fade out
-    //TODO just check that the new audio system plays music and stops, change to fade later
-    advhb::Audio::getInstance().stopBgmMP3();
+    advhb::Audio::getInstance().fadeBgmMP3();
 
     const char* message;
     s32 resetType;

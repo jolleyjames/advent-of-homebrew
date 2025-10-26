@@ -3,9 +3,9 @@
 #include <unistd.h>
 #include <asndlib.h>
 #include <mp3player.h>
-#include <ogc/lwp.h>
 
 #include "audio.hpp"
+#include "concurrency.hpp"
 
 advhb::Audio &advhb::Audio::getInstance()
 {
@@ -26,21 +26,38 @@ advhb::Audio::Audio()
     // Initialise the Wii audio and MP3 subsystems
     ASND_Init();
     MP3Player_Init();
+    // Initialize the mutex object, allowing re-entry
+    LWP_MutexInit_with_sysexit(&mutex, true);
     // member values initialized in header
 }
 
 advhb::Audio::~Audio()
 {
-    // TODO re-implement me with new class design in mind, including threads if necessary (probably necessary)
-    if (MP3Player_IsPlaying())
-        MP3Player_Stop();
+    stopBgmMP3();
+    LWP_MutexLock_with_sysexit(mutex); // start critical section
+    // join potential active threads
+    if (loopThread != LWP_THREAD_NULL)
+    {
+        LWP_MutexUnlock_with_sysexit(mutex); // end critical section
+        LWP_JoinThread_with_sysexit(loopThread, nullptr);
+        LWP_MutexLock_with_sysexit(mutex); // start critical section
+    }
+    if (fadeThread != LWP_THREAD_NULL)
+    {
+        LWP_MutexUnlock_with_sysexit(mutex); // end critical section
+        LWP_JoinThread_with_sysexit(fadeThread, nullptr);
+        LWP_MutexLock_with_sysexit(mutex); // start critical section
+    }
     if (mp3Buffer != nullptr)
         delete[] mp3Buffer;
+    LWP_MutexUnlock_with_sysexit(mutex); // end critical section
+    // Destroy the mutex object
+    LWP_MutexDestroy_with_sysexit(mutex);
 }
 
 bool advhb::Audio::updateVolumeBgmMP3(std::uint8_t newVolume)
 {
-    // TODO start critical section
+    LWP_MutexLock_with_sysexit(mutex); // start critical section
     // update only while fading
     bool updated = false;
     if (state == AudioState::Fading)
@@ -49,13 +66,36 @@ bool advhb::Audio::updateVolumeBgmMP3(std::uint8_t newVolume)
         MP3Player_Volume(static_cast<u32>(volume));
         updated = true;
     }
-    // TODO end critical section
+    LWP_MutexUnlock_with_sysexit(mutex); // end critical section
     return updated;
+}
+
+void *advhb::Audio::loopThreadAction(void *arg)
+{
+    Audio *audioPtr = static_cast<Audio *>(arg);
+    while (true)
+    {
+        LWP_MutexLock_with_sysexit(audioPtr->mutex); // start critical section
+        if (audioPtr->state == AudioState::Playing)
+        {
+            if (!MP3Player_IsPlaying())
+                MP3Player_PlayBuffer(audioPtr->mp3Buffer, audioPtr->mp3Size, nullptr);
+            LWP_MutexUnlock_with_sysexit(audioPtr->mutex); // end critical section
+            usleep(500 * 1000);                            // recheck in a half-second
+        }
+        else
+        {
+            audioPtr->loopThread = LWP_THREAD_NULL;
+            LWP_MutexUnlock_with_sysexit(audioPtr->mutex); // end critical section
+            break;
+        }
+    }
+    return nullptr;
 }
 
 bool advhb::Audio::playBgmMP3(const std::filesystem::path &path)
 {
-    // TODO start critical section
+    LWP_MutexLock_with_sysexit(mutex); // start critical section
     // play only if audio is already stopped
     bool stateChange = false;
     if (state == AudioState::Stopped)
@@ -129,34 +169,95 @@ bool advhb::Audio::playBgmMP3(const std::filesystem::path &path)
             MP3Player_PlayBuffer(mp3Buffer, mp3Size, nullptr);
             state = AudioState::Playing;
             stateChange = true;
-            // TODO implement looping with thread to restart song
+            // create a thread to restart if the end of the song has been reached
+            LWP_CreateThread_with_sysexit(
+                &loopThread,
+                loopThreadAction,
+                this,
+                nullptr,
+                0,
+                THREAD_PRIORITY);
         }
     }
-    // TODO end critical section
+    LWP_MutexUnlock_with_sysexit(mutex); // end critical section
     return stateChange;
 }
 
 bool advhb::Audio::stopBgmMP3()
 {
-    // TODO start critical section
+    LWP_MutexLock_with_sysexit(mutex); // start critical section
     // stop only if audio is actively playing
     bool stateChange = false;
     if (state == AudioState::Playing || state == AudioState::Fading)
     {
         state = AudioState::Stopped;
-        // TODO join active threads
+        // join active threads before freeing buffer
+        if (loopThread != LWP_THREAD_NULL)
+        {
+            LWP_MutexUnlock_with_sysexit(mutex); // end critical section
+            LWP_JoinThread_with_sysexit(loopThread, nullptr);
+            LWP_MutexLock_with_sysexit(mutex); // start critical section
+        }
+        if (fadeThread != LWP_THREAD_NULL)
+        {
+            LWP_MutexUnlock_with_sysexit(mutex); // end critical section
+            LWP_JoinThread_with_sysexit(fadeThread, nullptr);
+            LWP_MutexLock_with_sysexit(mutex); // start critical section
+        }
         MP3Player_Stop();
         delete[] mp3Buffer;
         mp3Size = 0;
         volume = MIN_VOLUME;
         stateChange = true;
     }
-    // TODO end critical section
+    LWP_MutexUnlock_with_sysexit(mutex); // end critical section
     return stateChange;
+}
+
+void *advhb::Audio::fadeThreadAction(void *arg)
+{
+    Audio *audioPtr = static_cast<Audio *>(arg);
+    while (true)
+    {
+        LWP_MutexLock_with_sysexit(audioPtr->mutex); // start critical section
+        if (audioPtr->state == AudioState::Fading && audioPtr->volume > MIN_VOLUME)
+        {
+            audioPtr->volume--;
+            MP3Player_Volume(audioPtr->volume);
+            LWP_MutexUnlock_with_sysexit(audioPtr->mutex); // end critical section
+            // carry out fade effect over 1 second
+            const int usecSleep = 1000 * 1000 / MAX_VOLUME;
+            usleep(usecSleep);
+        }
+        else
+        {
+            audioPtr->fadeThread = LWP_THREAD_NULL;
+            LWP_MutexUnlock_with_sysexit(audioPtr->mutex); // end critical section
+            audioPtr->stopBgmMP3();
+            break;
+        }
+    }
+    return nullptr;
 }
 
 bool advhb::Audio::fadeBgmMP3()
 {
-    // TODO implement me
-    return false; // TODO delete me
+    LWP_MutexLock_with_sysexit(mutex); // start critical section
+    // fade only if audio is actively playing
+    bool stateChange = false;
+    if (state == AudioState::Playing)
+    {
+        state = AudioState::Fading;
+        stateChange = true;
+        // create a thread gradually reduce volume for a fade-out effect
+        LWP_CreateThread_with_sysexit(
+            &fadeThread,
+            fadeThreadAction,
+            this,
+            nullptr,
+            0,
+            THREAD_PRIORITY);
+    }
+    LWP_MutexUnlock_with_sysexit(mutex); // end critical section
+    return stateChange;
 }
