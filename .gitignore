@@ -1,4 +1,5 @@
 build/
 input/
+local/
 .vscode
 .DS_Store
