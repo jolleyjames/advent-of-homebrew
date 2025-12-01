@@ -2,8 +2,8 @@
 <app version="1">
   <name>Advent of Homebrew</name>
   <coder>jolleyjames</coder>
-  <version>2025.330</version>
-  <release_date>20251126</release_date>
+  <version>2025.335</version>
+  <release_date>20251201</release_date>
   <short_description>Advent of Code solutions</short_description> 
   <long_description>
 Advent of Code solutions, as Nintendo Wii homebrew.
