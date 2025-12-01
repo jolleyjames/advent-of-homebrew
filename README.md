@@ -48,7 +48,7 @@ Hold B at startup to mute background music.
 
 ## Version History
 
-* 2025.??? - ??? ??, 2025
+* 2025.330 - November 26, 2025
     * Added background music
 * 2025.292 - October 19, 2025
     * Started year 2023 solutions
