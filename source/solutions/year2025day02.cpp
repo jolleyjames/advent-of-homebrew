@@ -96,6 +96,15 @@ namespace y2025d02
         return sum;
     }
 
+    std::uint64_t part2(std::ifstream &in) {
+        //TODO CAREFUL! Make sure not to count numbers twice.
+        // For example, what happens when evaluating the range 111110-111112,
+        // and incrementing repeats 2-6?
+        // Answer: 111111 gets counted 3 times: when repeat is 2 [111-111], 3 [11-11-11] and 6 [1-1-1-1-1-1].
+        // Solution is probably to return invalid IDs as a std::set then sum at end.
+        return 42; //TODO delete me
+    }
+
 
     //TODO delete me
     std::vector<std::string> testLoad(std::ifstream &in) {
