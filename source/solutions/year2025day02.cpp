@@ -63,7 +63,7 @@ namespace y2025d02
         std::string::size_type to = rangeString.find(nextDelim, from);
         while (from != std::string::npos) {
             to = rangeString.find(nextDelim, from);
-            std::uint64_t next = static_cast<std::uint64_t>(std::stol(rangeString.substr(from, to-from)));
+            std::uint64_t next = static_cast<std::uint64_t>(std::stoll(rangeString.substr(from, to-from)));
             ranges.push_back(next);
             if (nextDelim == '-')
                 nextDelim = ',';
@@ -80,6 +80,10 @@ namespace y2025d02
     }
 
     std::uint64_t part1(std::ifstream &in) {
+        //DEBUG
+        std::cout << "sizeof(long) == " << sizeof(long) << std::endl;
+        std::cout << "sizeof(long long) == " << sizeof(long long) << std::endl;
+        //END DEBUG
         std::vector<std::uint64_t> ranges = loadRanges(in);
         std::uint64_t sum = 0;
         std::vector<std::uint64_t>::size_type i = 0;
