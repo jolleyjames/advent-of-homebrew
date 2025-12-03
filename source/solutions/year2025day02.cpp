@@ -11,28 +11,33 @@
 
 namespace y2025d02
 {
-    std::uint64_t sumInvalidIds(std::uint64_t start, std::uint64_t end) {
-        if (start > end) {
-            //throw std::invalid_argument("start greater than end");
-            //DEBUG
-            std::cout << "start " << start << " greater than end " << end << std::endl;
-            return 0;
+
+    std::uint64_t findMult(const int repeats, const int indexDigits) {
+        std::uint64_t mult = 1;
+        for (int j = 0; j < repeats - 1; j++) {
+            for (int k = 0; k < indexDigits; k++) {
+                mult *= 10;
+            }
+            mult++;
         }
-        
+        return mult;
+    }
+
+
+    std::uint64_t sumInvalidIds(const std::uint64_t start, const std::uint64_t end, const int repeats) {
+        if (start > end)
+            throw std::invalid_argument("start greater than end");
         int startDigits = static_cast<int>(std::floor(std::log10(static_cast<double>(start)) + 1.0));
-        if (startDigits % 2 == 1)
-            startDigits++;
-        int indexDigits = startDigits/2;
+        if (startDigits % repeats != 0)
+            startDigits += (repeats - (startDigits % repeats));
+        int indexDigits = startDigits/repeats;
         std::uint64_t minIndex = 1;
         for (int i = 1; i < indexDigits; i++)
             minIndex *= 10;
         std::uint64_t index = start;
-        std::uint64_t mult = 1;
-        for (int i = 0; i < indexDigits; i++) {
+        for (int i = 0; i < indexDigits; i++)
             index /= 10;
-            mult *= 10;
-        }
-        mult++;
+        std::uint64_t mult = findMult(repeats, indexDigits);
         if (index < minIndex)
             index = minIndex;
         std::uint64_t incrIndexDigitsWhenIndex = minIndex * 10;
@@ -45,9 +50,8 @@ namespace y2025d02
             }
             index++;
             if (index == incrIndexDigitsWhenIndex) {
-                mult--;
-                mult *= 10;
-                mult++;
+                indexDigits++;
+                mult = findMult(repeats, indexDigits);
                 incrIndexDigitsWhenIndex *= 10;
             }
         }
@@ -81,14 +85,12 @@ namespace y2025d02
 
     std::uint64_t part1(std::ifstream &in) {
         //DEBUG
-        std::cout << "sizeof(long) == " << sizeof(long) << std::endl;
-        std::cout << "sizeof(long long) == " << sizeof(long long) << std::endl;
-        //END DEBUG
+        std::cout << "attempted generalized part 1" << std::endl;
         std::vector<std::uint64_t> ranges = loadRanges(in);
         std::uint64_t sum = 0;
         std::vector<std::uint64_t>::size_type i = 0;
         while (i < ranges.size()) {
-            sum += sumInvalidIds(ranges[i], ranges[i+1]);
+            sum += sumInvalidIds(ranges[i], ranges[i+1], 2);
             i += 2;
         }
         return sum;
