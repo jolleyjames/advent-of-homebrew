@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <set>
 //DEBUG
 #include <iostream>
 
@@ -24,7 +25,7 @@ namespace y2025d02
     }
 
 
-    std::uint64_t sumInvalidIds(const std::uint64_t start, const std::uint64_t end, const int repeats) {
+    void findInvalidIds(std::set<std::uint64_t>& ids, const std::uint64_t start, const std::uint64_t end, const int repeats) {
         if (start > end)
             throw std::invalid_argument("start greater than end");
         int startDigits = static_cast<int>(std::floor(std::log10(static_cast<double>(start)) + 1.0));
@@ -35,18 +36,17 @@ namespace y2025d02
         for (int i = 1; i < indexDigits; i++)
             minIndex *= 10;
         std::uint64_t index = start;
-        for (int i = 0; i < indexDigits; i++)
+        for (int i = 0; i < (repeats-1)*indexDigits; i++)
             index /= 10;
         std::uint64_t mult = findMult(repeats, indexDigits);
         if (index < minIndex)
             index = minIndex;
         std::uint64_t incrIndexDigitsWhenIndex = minIndex * 10;
-        std::uint64_t sum = 0;
         while (mult * index <= end) {
             if (mult * index >= start) {
                 //DEBUG
-                //std::cout << mult*index << std::endl;
-                sum += (mult * index);
+                std::cout << mult*index << std::endl;
+                ids.insert(mult * index);
             }
             index++;
             if (index == incrIndexDigitsWhenIndex) {
@@ -55,7 +55,6 @@ namespace y2025d02
                 incrIndexDigitsWhenIndex *= 10;
             }
         }
-        return sum;
     }
 
     std::vector<std::uint64_t> loadRanges(std::ifstream &in) {
@@ -84,35 +83,40 @@ namespace y2025d02
     }
 
     std::uint64_t part1(std::ifstream &in) {
-        //DEBUG
-        std::cout << "attempted generalized part 1" << std::endl;
         std::vector<std::uint64_t> ranges = loadRanges(in);
-        std::uint64_t sum = 0;
         std::vector<std::uint64_t>::size_type i = 0;
+        std::set<std::uint64_t> ids;
         while (i < ranges.size()) {
-            sum += sumInvalidIds(ranges[i], ranges[i+1], 2);
+            findInvalidIds(ids, ranges[i], ranges[i+1], 2);
             i += 2;
         }
+        std::uint64_t sum = 0;
+        for (std::uint64_t id : ids)
+            sum += id;
         return sum;
     }
 
     std::uint64_t part2(std::ifstream &in) {
-        //TODO CAREFUL! Make sure not to count numbers twice.
-        // For example, what happens when evaluating the range 111110-111112,
-        // and incrementing repeats 2-6?
-        // Answer: 111111 gets counted 3 times: when repeat is 2 [111-111], 3 [11-11-11] and 6 [1-1-1-1-1-1].
-        // Solution is probably to return invalid IDs as a std::set then sum at end.
-        return 42; //TODO delete me
-    }
-
-
-    //TODO delete me
-    std::vector<std::string> testLoad(std::ifstream &in) {
         std::vector<std::uint64_t> ranges = loadRanges(in);
+        std::set<std::uint64_t> ids;
+        // How many digits does the largest value in all ranges have?
+        std::uint64_t maxRange = 0;
         for (std::uint64_t range : ranges)
-            std::cout << range << std::endl;
-        std::vector<std::string> emptyVec;
-        return emptyVec;
+            if (range > maxRange)
+                maxRange = range;
+        int maxDigits = static_cast<int>(std::floor(std::log10(static_cast<double>(maxRange)) + 1.0));
+        for (int j = 2; j <= maxDigits; j++) {
+            //TODO probably only need to loop through prime numbers -- confirm
+            std::vector<std::uint64_t>::size_type i = 0;
+            while (i < ranges.size()) {
+                findInvalidIds(ids, ranges[i], ranges[i+1], j);
+                i += 2;
+            }
+        }
+        std::uint64_t sum = 0;
+        for (std::uint64_t id : ids)
+            sum += id;
+        return sum;
     }
 
     advhb::Solution s1(
@@ -122,5 +126,11 @@ namespace y2025d02
         [](std::ifstream &in){ return std::vector<std::string>{std::to_string(part1(in))}; }
     );
 
+    advhb::Solution s2(
+        2025,
+        2,
+        advhb::PuzzlePart::PartTwo,
+        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(part2(in))}; }
+    );
 
 }
