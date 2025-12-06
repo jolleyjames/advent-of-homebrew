@@ -1,8 +1,6 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
-//DEBUG
-#include <iostream>
 
 #include "solution.hpp"
 
@@ -16,29 +14,32 @@ namespace y2025d03
         return banks;
     }
 
-    int maxJoltage(const std::string& bank) {
-        std::size_t x0 = 0;
-        std::size_t x1 = 1;
-        for (std::size_t i = 1; i < bank.size()-1; i++) {
-            if (bank[x0] != '9' && bank[i] > bank[x0]) {
-                x0 = i;
-                x1 = i+1;
+    std::int64_t maxJoltage(const std::string& bank, const std::size_t size) {
+        std::vector<std::size_t> xvec(size);
+        for (std::size_t i = 0; i < xvec.size(); i++)
+            xvec[i] = i;
+        for (std::size_t i = 1; i < bank.size()-size+1; i++) {
+            for (std::size_t j = 0; j < size; j++) {
+                if (bank[i+j] > bank[xvec[j]]) {
+                    for (std::size_t jj = j; jj < size; jj++)
+                        xvec[jj] = i+jj;
+                    break;
+                }
             }
-            else if (bank[i+1] > bank[x1])
-                x1 = i+1;
-            if (bank[x0] == '9' and bank[x1] == '9')
-                break;
         }
-        return 10*static_cast<int>(bank[x0]-'0') + static_cast<int>(bank[x1]-'0');
+        std::int64_t joltage = 0;
+        for (std::size_t i = 0; i < xvec.size(); i++) {
+            joltage *= 10;
+            joltage += static_cast<std::int64_t>(bank[xvec[i]]-'0');
+        }
+        return joltage;
     }
 
-    int part1(std::ifstream &in) {
+    std::int64_t generalized(std::ifstream& in, const std::size_t size) {
         std::vector<std::string> banks = loadBanks(in);
-        int sum = 0;
+        std::int64_t sum = 0;
         for (auto bank : banks) {
-            int joltage = maxJoltage(bank);
-            //DEBUG
-            std::cout << joltage << std::endl;
+            std::int64_t joltage = maxJoltage(bank, size);
             sum += joltage;
         }
         return sum;
@@ -48,7 +49,13 @@ namespace y2025d03
         2025,
         3,
         advhb::PuzzlePart::PartOne,
-        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(part1(in))}; }
+        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(generalized(in,2))}; }
     );
 
+    advhb::Solution s2(
+        2025,
+        3,
+        advhb::PuzzlePart::PartTwo,
+        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(generalized(in,12))}; }
+    );
 }
