@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 #include <set>
-//DEBUG
-#include <iostream>
 
 #include "solution.hpp"
 
@@ -44,8 +42,6 @@ namespace y2025d02
         std::uint64_t incrIndexDigitsWhenIndex = minIndex * 10;
         while (mult * index <= end) {
             if (mult * index >= start) {
-                //DEBUG
-                std::cout << mult*index << std::endl;
                 ids.insert(mult * index);
             }
             index++;
@@ -82,21 +78,7 @@ namespace y2025d02
         return ranges;
     }
 
-    std::uint64_t part1(std::ifstream &in) {
-        std::vector<std::uint64_t> ranges = loadRanges(in);
-        std::vector<std::uint64_t>::size_type i = 0;
-        std::set<std::uint64_t> ids;
-        while (i < ranges.size()) {
-            findInvalidIds(ids, ranges[i], ranges[i+1], 2);
-            i += 2;
-        }
-        std::uint64_t sum = 0;
-        for (std::uint64_t id : ids)
-            sum += id;
-        return sum;
-    }
-
-    std::uint64_t part2(std::ifstream &in) {
+    std::uint64_t generalized(std::ifstream &in, advhb::PuzzlePart part) {
         std::vector<std::uint64_t> ranges = loadRanges(in);
         std::set<std::uint64_t> ids;
         // How many digits does the largest value in all ranges have?
@@ -105,13 +87,15 @@ namespace y2025d02
             if (range > maxRange)
                 maxRange = range;
         int maxDigits = static_cast<int>(std::floor(std::log10(static_cast<double>(maxRange)) + 1.0));
-        for (int j = 2; j <= maxDigits; j++) {
-            //TODO probably only need to loop through prime numbers -- confirm
+        int primes[] = {2,3,5,7,11,13,17};
+        for (unsigned int j = 0; j < sizeof(primes)/sizeof(int) && primes[j] <= maxDigits; j++) {
             std::vector<std::uint64_t>::size_type i = 0;
             while (i < ranges.size()) {
-                findInvalidIds(ids, ranges[i], ranges[i+1], j);
+                findInvalidIds(ids, ranges[i], ranges[i+1], primes[j]);
                 i += 2;
             }
+            if (part == advhb::PuzzlePart::PartOne)
+                break;
         }
         std::uint64_t sum = 0;
         for (std::uint64_t id : ids)
@@ -123,14 +107,14 @@ namespace y2025d02
         2025,
         2,
         advhb::PuzzlePart::PartOne,
-        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(part1(in))}; }
+        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(generalized(in, advhb::PuzzlePart::PartOne))}; }
     );
 
     advhb::Solution s2(
         2025,
         2,
         advhb::PuzzlePart::PartTwo,
-        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(part2(in))}; }
+        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(generalized(in, advhb::PuzzlePart::PartTwo))}; }
     );
 
 }
