@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(advhb LANGUAGES CXX VERSION 2025.335)
+project(advhb LANGUAGES CXX VERSION 2025.341)
 
 find_library(FAT32_LIBRARY NAMES fat HINTS "${DEVKITPRO}/libogc/lib/wii")
 find_library(MAD_LIBRARY NAMES mad HINTS "${DEVKITPRO}/libogc/lib/wii")
