@@ -57,15 +57,8 @@ namespace y2025d05
                 ingredients.push_back(ingredient);
             }
         }
-        return {ranges, ingredients};
-    }
-
-    std::size_t countFresh(std::ifstream &in) {
-        auto db = loadIngredientDb(in);
-        auto ranges = std::get<0>(db);
-        auto ingredients = std::get<1>(db);
+        // sort and reduce ranges
         ranges.sort();
-        std::sort(ingredients.begin(), ingredients.end());
         auto itr = ranges.begin();
         while (std::next(itr) != ranges.end()) {
             if (itr->tryReduce(*std::next(itr))) {
@@ -74,11 +67,13 @@ namespace y2025d05
                 itr++;
             }
         }
-        //DEBUG
-        std::cout << "reduced ranges" << std::endl;
-        for (const auto& range : ranges)
-            std::cout << range.getFirst() << " " << range.getLast() << std::endl;
-        //END DEBUG
+        return {ranges, ingredients};
+    }
+
+    std::size_t countFresh(std::ifstream &in) {
+        auto db = loadIngredientDb(in);
+        auto ranges = std::get<0>(db);
+        auto ingredients = std::get<1>(db);
         std::size_t fresh = 0;
         for (auto ingredient : ingredients) {
             for (const auto& range : ranges) {
@@ -92,6 +87,16 @@ namespace y2025d05
         return fresh;
     }
 
+    std::int64_t totalFresh(std::ifstream &in) {
+        auto db = loadIngredientDb(in);
+        auto ranges = std::get<0>(db);
+        std::int64_t fresh = 0;
+        for (const auto& range : ranges) {
+            fresh += (range.getLast() - range.getFirst() + 1);
+        }
+        return fresh;
+    }
+
     advhb::Solution s1(
         2025,
         5,
@@ -99,4 +104,10 @@ namespace y2025d05
         [](std::ifstream &in){ return std::vector<std::string>{std::to_string(countFresh(in))}; }
     );
 
+    advhb::Solution s2(
+        2025,
+        5,
+        advhb::PuzzlePart::PartTwo,
+        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(totalFresh(in))}; }
+    );
 }
