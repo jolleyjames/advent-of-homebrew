@@ -29,15 +29,15 @@ namespace y2025d07
         return {start, splitters, y};
     }
 
-    int generalized(std::ifstream &in, advhb::PuzzlePart part) {
+    std::uint64_t generalized(std::ifstream &in, advhb::PuzzlePart part) {
         auto diagram = loadDiagram(in);
         Loc start = std::get<0>(diagram);
         std::set<Loc> splitters = std::get<1>(diagram);
         std::size_t yEndAt = std::get<2>(diagram);
-        std::map<Loc, std::size_t> beamsAndPaths = {{start,1}};
-        std::size_t splits = 0;
+        std::map<Loc, std::uint64_t> beamsAndPaths = {{start,1}};
+        std::uint64_t splits = 0;
         for (std::size_t y = 0; y < yEndAt; y++) {
-            std::map<Loc, std::size_t> newBeamsAndPaths;
+            std::map<Loc, std::uint64_t> newBeamsAndPaths;
             for (const auto& beamAndPaths : beamsAndPaths) {
                 auto beam = std::get<0>(beamAndPaths);
                 auto paths = std::get<1>(beamAndPaths);
@@ -68,7 +68,7 @@ namespace y2025d07
         }
         if (part == advhb::PuzzlePart::PartOne)
             return splits;
-        std::size_t paths = 0;
+        std::uint64_t paths = 0;
         for (const auto& beamAndPath : beamsAndPaths)
             paths += std::get<1>(beamAndPath);
         return paths;
