@@ -5,10 +5,6 @@
 #include <cstdint>
 #include <map>
 
-#include <sstream>
-#include <vector>
-#include <iostream>
-
 #include "solution.hpp"
 
 namespace y2025d07
@@ -33,7 +29,7 @@ namespace y2025d07
         return {start, splitters, y};
     }
 
-    int part1(std::ifstream &in) {
+    int generalized(std::ifstream &in, advhb::PuzzlePart part) {
         auto diagram = loadDiagram(in);
         Loc start = std::get<0>(diagram);
         std::set<Loc> splitters = std::get<1>(diagram);
@@ -41,7 +37,6 @@ namespace y2025d07
         std::map<Loc, std::size_t> beamsAndPaths = {{start,1}};
         std::size_t splits = 0;
         for (std::size_t y = 0; y < yEndAt; y++) {
-            //std::set<Loc> beamsAdded, beamsRemoved;
             std::map<Loc, std::size_t> newBeamsAndPaths;
             for (const auto& beamAndPaths : beamsAndPaths) {
                 auto beam = std::get<0>(beamAndPaths);
@@ -71,16 +66,25 @@ namespace y2025d07
             }
             beamsAndPaths = newBeamsAndPaths;
         }
-        return splits;
+        if (part == advhb::PuzzlePart::PartOne)
+            return splits;
+        std::size_t paths = 0;
+        for (const auto& beamAndPath : beamsAndPaths)
+            paths += std::get<1>(beamAndPath);
+        return paths;
     }
 
     advhb::Solution s1(
         2025,
         7,
         advhb::PuzzlePart::PartOne,
-        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(part1(in))}; }
+        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(generalized(in, advhb::PuzzlePart::PartOne))}; }
     );
 
-
-
+    advhb::Solution s2(
+        2025,
+        7,
+        advhb::PuzzlePart::PartTwo,
+        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(generalized(in, advhb::PuzzlePart::PartTwo))}; }
+    );
 }
