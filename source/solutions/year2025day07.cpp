@@ -3,6 +3,7 @@
 #include <set>
 #include <tuple>
 #include <cstdint>
+#include <map>
 
 #include <sstream>
 #include <vector>
@@ -37,26 +38,38 @@ namespace y2025d07
         Loc start = std::get<0>(diagram);
         std::set<Loc> splitters = std::get<1>(diagram);
         std::size_t yEndAt = std::get<2>(diagram);
-        std::set<Loc> beams = {start};
+        std::map<Loc, std::size_t> beamsAndPaths = {{start,1}};
         std::size_t splits = 0;
         for (std::size_t y = 0; y < yEndAt; y++) {
-            std::set<Loc> beamsAdded, beamsRemoved;
-            for (const auto& beam : beams) {
+            //std::set<Loc> beamsAdded, beamsRemoved;
+            std::map<Loc, std::size_t> newBeamsAndPaths;
+            for (const auto& beamAndPaths : beamsAndPaths) {
+                auto beam = std::get<0>(beamAndPaths);
+                auto paths = std::get<1>(beamAndPaths);
                 if (splitters.find(beam) != splitters.end()) {
-                    beamsAdded.insert({std::get<0>(beam)+1, std::get<1>(beam)-1});
-                    beamsAdded.insert({std::get<0>(beam)+1, std::get<1>(beam)+1});
-                    beamsRemoved.insert({std::get<0>(beam)+1, std::get<1>(beam)});
                     splits++;
+                    Loc nextBeamL = {std::get<0>(beam)+1, std::get<1>(beam)-1};
+                    Loc nextBeamR = {std::get<0>(beam)+1, std::get<1>(beam)+1};
+                    auto i = newBeamsAndPaths.find(nextBeamL);
+                    if (i != newBeamsAndPaths.end())
+                        i->second += paths;
+                    else
+                        newBeamsAndPaths[nextBeamL] = paths;
+                    i = newBeamsAndPaths.find(nextBeamR);
+                    if (i != newBeamsAndPaths.end())
+                        i->second += paths;
+                    else
+                        newBeamsAndPaths[nextBeamR] = paths;
+                } else {
+                    Loc nextBeam = {std::get<0>(beam)+1, std::get<1>(beam)};
+                    auto i = newBeamsAndPaths.find(nextBeam);
+                    if (i != newBeamsAndPaths.end())
+                        i->second += paths;
+                    else
+                        newBeamsAndPaths[nextBeam] = paths;
                 }
             }
-            std::set<Loc> newBeams;
-            for (const auto& beam : beams) {
-                Loc newBeam = {std::get<0>(beam)+1, std::get<1>(beam)};
-                if (beamsRemoved.find(newBeam) == beamsRemoved.end())
-                    newBeams.insert(newBeam);
-                newBeams.insert(beamsAdded.begin(), beamsAdded.end());
-            }
-            beams = newBeams;
+            beamsAndPaths = newBeamsAndPaths;
         }
         return splits;
     }
