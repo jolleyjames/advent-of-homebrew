@@ -9,9 +9,6 @@
 
 #include <Eigen/Dense>
 
-//DEBUG
-#include <iostream>
-
 #include "solution.hpp"
 
 namespace y2025d08
@@ -53,17 +50,17 @@ namespace y2025d08
         return distances;
     }
 
-    std::size_t part1(std::ifstream& in) {
+    std::tuple <
+        Eigen::Array<std::int64_t, Eigen::Dynamic, 3>,
+        std::vector<Distance>,
+        std::map<std::size_t, std::set<std::size_t>*>
+    > loadAndCombine(std::ifstream& in) {
         auto jb = loadJunctionBoxes(in);
         std::vector<Distance> distances = findDistancesSq(jb);
         std::sort(distances.begin(), distances.end(), 
           [](const Distance& a, const Distance& b){
             return std::get<0>(a) < std::get<0>(b);
           });
-        // For test mode, combine 10 closest pairs; for normal mode, 1000
-        std::size_t combinations = 10;
-        if (jb.rows() > 20)
-            combinations = 1000;
         // Map each junction box index to its circuit
         std::map<std::size_t, std::set<std::size_t>*> boxCircuitMap;
         for (Eigen::Index x = 0; x < jb.rows(); x++) {
@@ -71,22 +68,37 @@ namespace y2025d08
             circuit->insert((std::size_t)x);
             boxCircuitMap[x] = circuit;
         }
+        return {jb, distances, boxCircuitMap};
+    }
+
+    void combine(const Distance& d, std::map<std::size_t, std::set<std::size_t>*>& boxCircuitMap) {
+        // are they not neighbors?
+        std::set<std::size_t>* c1 = boxCircuitMap[std::get<1>(d)];
+        std::set<std::size_t>* c2 = boxCircuitMap[std::get<2>(d)];
+        if (c1 != c2) {
+            // they're neighbors now!
+            // merge the circuits
+            c1->insert(c2->begin(), c2->end());
+            // update the circuit mapping
+            for (auto jbndx : *c2)
+                boxCircuitMap[jbndx] = c1;
+            // delete the now-unused circuit
+            delete c2;
+        }
+    }
+
+    std::size_t part1(std::ifstream& in) {
+        auto t = loadAndCombine(in);
+        auto jb = std::get<0>(t);
+        auto distances = std::get<1>(t);
+        auto boxCircuitMap = std::get<2>(t);
+        // For test mode, combine 10 closest pairs; for normal mode, 1000
+        std::size_t combinations = 10;
+        if (jb.rows() > 20)
+            combinations = 1000;
         // find the C shortest distances and combine the pairs into a single circuit
         for (std::size_t c = 0; c < combinations; c++) {
-            const Distance& d = distances[c];
-            // are they not neighbors?
-            std::set<std::size_t>* c1 = boxCircuitMap[std::get<1>(d)];
-            std::set<std::size_t>* c2 = boxCircuitMap[std::get<2>(d)];
-            if (c1 != c2) {
-                // they're neighbors now!
-                // merge the circuits
-                c1->insert(c2->begin(), c2->end());
-                // update the circuit mapping
-                for (auto jbndx : *c2)
-                    boxCircuitMap[jbndx] = c1;
-                // delete the now-unused circuit
-                delete c2;
-            }
+            combine(distances[c], boxCircuitMap);
         }
         // get the unique set of circuits, saving them in a set sorted by descending circuit length
         auto circuitComparator = [](std::set<std::size_t>* a, std::set<std::size_t>* b) {
@@ -107,6 +119,26 @@ namespace y2025d08
         return product;
     }
 
+    std::int64_t part2(std::ifstream& in) {
+        auto t = loadAndCombine(in);
+        auto jb = std::get<0>(t);
+        auto distances = std::get<1>(t);
+        auto boxCircuitMap = std::get<2>(t);
+        // combine until all boxes are in one circuit
+        for (std::size_t c = 0; c < distances.size(); c++) {
+            combine(distances[c], boxCircuitMap);
+            // if this circuit has all boxes, return product of x coords
+            if (boxCircuitMap[0]->size() == (std::size_t)jb.rows()) {
+                delete boxCircuitMap[0];
+                Eigen::Index r1 = std::get<1>(distances[c]);
+                Eigen::Index r2 = std::get<2>(distances[c]);
+                return jb(r1,0) * jb(r2,0);
+            }
+        }
+        // this line should not be reachable
+        return -1;
+    }
+
     advhb::Solution s1(
         2025,
         8,
@@ -114,4 +146,10 @@ namespace y2025d08
         [](std::ifstream &in){ return std::vector<std::string>{std::to_string(part1(in))}; }
     );
 
+    advhb::Solution s2(
+        2025,
+        8,
+        advhb::PuzzlePart::PartTwo,
+        [](std::ifstream &in){ return std::vector<std::string>{std::to_string(part2(in))}; }
+    );
 }
