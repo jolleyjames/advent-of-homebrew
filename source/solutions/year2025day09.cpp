@@ -2,6 +2,8 @@
 #include <string>
 #include <cstdint>
 #include <vector>
+#include <tuple>
+#include <algorithm>
 #include <cstdlib>
 
 #include "solution.hpp"
@@ -26,21 +28,31 @@ namespace y2025d09
         return coords;
     }
 
+    std::vector<std::tuple<Coord,Coord>> combineCoords(const std::vector<Coord>& coords) {
+        std::vector<std::tuple<Coord,Coord>> combos;
+        for (std::size_t i = 0; i < coords.size()-1; i++) {
+            for (std::size_t j = i+1; j < coords.size()-1; j++) {
+                combos.push_back({coords[i], coords[j]});
+            }
+        }
+        return combos;
+    }
+
     std::int64_t getArea(const Coord& a, const Coord& b) {
         return (std::abs(a.x-b.x)+1)*(std::abs(a.y-b.y)+1);
     }
 
+    std::int64_t getArea(const std::tuple<Coord,Coord>& coords) {
+        return getArea(std::get<0>(coords), std::get<1>(coords));
+    }
+
     std::int64_t part1(std::ifstream& in) {
-        auto coords = loadRedTiles(in);
-        std::int64_t maxArea = 0;
-        for (std::size_t a = 0; a < coords.size()-1; a++) {
-            for (std::size_t b = a+1; b < coords.size(); b++) {
-                auto area = getArea(coords[a], coords[b]);
-                if (area > maxArea)
-                    maxArea = area;
-            }
-        }
-        return maxArea;
+        auto combos = combineCoords(loadRedTiles(in));
+        std::sort(combos.begin(), combos.end(),
+          [](const auto& coordPair1, const auto& coordPair2) {
+            return getArea(coordPair1) > getArea(coordPair2);
+          });
+        return getArea(combos[0]);
     }
 
     advhb::Solution s1(
