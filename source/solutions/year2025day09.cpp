@@ -46,12 +46,16 @@ namespace y2025d09
         return getArea(std::get<0>(coords), std::get<1>(coords));
     }
 
-    std::int64_t part1(std::ifstream& in) {
-        auto combos = combineCoords(loadRedTiles(in));
+    void sortCombosByArea(std::vector<std::tuple<Coord,Coord>>& combos) {
         std::sort(combos.begin(), combos.end(),
           [](const auto& coordPair1, const auto& coordPair2) {
             return getArea(coordPair1) > getArea(coordPair2);
           });
+    }
+
+    std::int64_t part1(std::ifstream& in) {
+        auto combos = combineCoords(loadRedTiles(in));
+        sortCombosByArea(combos);
         return getArea(combos[0]);
     }
 
